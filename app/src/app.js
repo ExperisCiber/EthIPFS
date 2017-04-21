@@ -23,233 +23,118 @@ if (!USE_SANDBOX && typeof web3 !== 'undefined') { // Injection by Metamask/Mist
   CONTRACT_ADDRESS=SANDBOX_CONTRACT_ADDRESS;
   console.log('Using sandbox');
 }
+        var ipfsHost    = 'localhost',
+            ipfsAPIPort = '5001',
+            ipfsWebPort = '8080',
+            web3Host    = 'http://xepa.local',
+            web3Port    = '8545';
+        // IPFS
+        var ipfs = window.IpfsApi(ipfsHost, ipfsAPIPort)
+        ipfs.swarm.peers(function(err, response) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log("IPFS - connected to " + response.Strings.length + " peers");
+                console.log(response);
+            }
+        });
 
-/**
- * Utility method that takes at least one parameter: a function `x`.
- * The last argument of function `x` should be a callback in the form (error, result)
- * Every next argument you give `promise` will be given as argument to function `x`
- */
-const promise = (fn, ...args) => {
-  return new Promise((resolve, reject) => 
-    fn.apply(this, args.concat([(err, result) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result);
-      }
-    }]))
-  );
-};
-
-/**
- * Function that will refreh the balance div with the balance of the contract
- */
-const refreshBalance = contract => promise(window.web3.eth.getBalance, contract.address, 'latest')
- .then(result => web3.fromWei(result, 'ether'))
- .then(result => $('.balance').html(result.toNumber()));
-
-/**
- * Function that will refresh all relevant with fields from the lottery contract
- */ 
- const toString = (value) => {
-  var str = "";
-  value = value.substr(2, value.length);
-  for (var i = 0; i < value.length; i += 2)
-    	{
-        str += String.fromCharCode(parseInt(value.substr(i, 2), 16));
-		}
-	return str;
-};
-
-const refreshWinnerData = contract => {
-  
-  promise(contract.winnerAddress)
-    .then(winner => $('.winnerAddress').html(winner));
-    
-  promise(contract.winnerNumber)
-    .then (number => number.toNumber())
-    .then (number => $('.winnerNumber').html(number));
-  
-};
-
-const refreshLotteryData = contract => {
-  refreshBalance(contract);
-
-  promise(contract.lotteryTitle)
-    .then(title => toString(title))
-    .then(title => $('.title').html(title));
-  
-  promise(contract.ticketPrice)
-    .then(price => price.toNumber())
-    .then(price => web3.fromWei(price, 'ether'))
-    .then(price => $('.ticket-price').html(price));
-    
-  promise(contract.tickets, 1)
-   .then (tickets => $('.participant1').html(tickets));
-  promise(contract.tickets, 2)
-   .then (tickets => $('.participant2').html(tickets));
-   promise(contract.tickets, 3)
-   .then (tickets => $('.participant3').html(tickets));
-   promise(contract.tickets, 4)
-   .then (tickets => $('.participant4').html(tickets));
-   promise(contract.tickets, 5)
-   .then (tickets => $('.participant5').html(tickets));
-   promise(contract.tickets, 6)
-   .then (tickets => $('.participant6').html(tickets));
-   promise(contract.tickets, 7)
-   .then (tickets => $('.participant7').html(tickets));
-   promise(contract.tickets, 8)
-   .then (tickets => $('.participant8').html(tickets));
-   promise(contract.tickets, 9)
-   .then (tickets => $('.participant9').html(tickets));
-    
-  Promise.all([promise(contract.endDateStart), promise(contract.endDateClose)])
-    .then(([start, close]) => endDateKnown(start.toNumber(), close.toNumber()))
-    .catch(err => toastr.error(err));
-};
-
-const endDateKnown = (endDateStart, endDateClose) => {
-  const momentStart = moment.unix(endDateStart);
-  const momentEnd = moment.unix(endDateClose);
-  
-  $('.end-date').html(momentStart.format(DATE_FORMAT) + ' <br/> ' + momentEnd.format(DATE_FORMAT));
-
-  if (moment().isBetween(momentStart, momentEnd)) {
-    $('#end-lottery-button').prop('disabled', false);
-  } else {
-    $('#end-lottery-button').prop('disabled', true);
-
-    if (moment().isBefore(momentStart)) {
-      const timeUntilEnabled = (momentStart.unix() - moment().unix()) * 1000; 
-      setTimeout(() => $('#end-lottery-button').prop('disabled', false), timeUntilEnabled);
-     }
-  }
-  
-  if (moment().isAfter(momentEnd)) {
-    $('#refund-button').prop('disabled', false);
-  } else {
-    $('#refund-button').prop('disabled', true);
-    const timeUntilEnabled = (momentEnd.unix() - moment().unix()) * 1000;
-    setTimeout(() => $('#refund-button').prop('disabled', false), timeUntilEnabled);
-  }
-};
-
-/**
- * Updates the visibility of fields that are bound to the state of the contract.
- * Will hide and show fields appropriate.
- * Will also refresh the lottery data if the lottery is started
- */ 
-const refreshLotteryState = contract => {
-  promise(contract.lotteryState).then(result => {
-    if (result) {
-      $('.lottery-started').show();
-      $('.lottery-not-started').hide();
-    
-      refreshLotteryData(contract);
-    } else {
-      $('.lottery-started').hide();
-      $('.lottery-not-started').show();
-      
-      refreshWinnerData(contract);
-    }
-  }).catch(err => toastr.error(err));
-};
-
-/**
- * Utility method to watch events on a contract
- */ 
-const watchContractEvent = (event, fn) => {
-  event().watch((error, result) => fn());
-};
-
-/**
- * Listen to events on the lottery contract
- */ 
-const watchContractEvents = contract => {
-  watchContractEvent(contract.BuyIn, () => refreshLotteryState(contract));
-  watchContractEvent(contract.LotteryStart, () => refreshLotteryState(contract));
-  watchContractEvent(contract.LotteryEnd, () => refreshLotteryState(contract));
-};
-
-/**
- * Utility method that will listen to clicks on a certain selector, and will stop 
- * propagation of the click event throughout the DOM
- */ 
-const watchButtonClick = (selector, fn) => {
-  $(selector).click(e => {
-    e.stopPropagation();
-    fn.apply(this, e);
-    return false;
-  });
-};
-
-const watchStartLotteryButton = contract => 
-  watchButtonClick('#start-lottery-button', e => {
-      const form = $('#start-lottery-form');
-      const title = form.find('input[name=name]').val();
-      const lotPrice = web3.toWei(form.find('input[name=lotPrice]').val(), 'ether')
-      const maxParticipants = form.find('input[name=maxParticipants]').val();
-      const endDateStart = moment(form.find('input[name=endDateStart]').val(), DATE_FORMAT);
-      const endDateClose = moment(form.find('input[name=endDateClose]').val(), DATE_FORMAT);
-
-      promise(contract.startLottery, title, endDateStart.unix(), endDateClose.unix(), lotPrice, maxParticipants)
-        .then(() => toastr.success('Lottery submitted'))
-        .then(() => refreshLotteryState(contract))
-        .catch(err => toastr.error(err));
-  });
-  
-const watchBuyTicketButton = contract => {
-  watchButtonClick('#buy-ticket-button', e => {
-    promise(contract.ticketPrice)
-      .then(ticketPrice => promise(contract.buyIn, {value: ticketPrice}))
-      .then(result => toastr.success('Ticket submitted'))
-      .catch(err => toastr.error(err));
-  });
-};
-
-const watchRefundButton = contract => {
-  watchButtonClick('#refund-button', e => {
-    promise(contract.refund)
-      .then(() => toastr.success('Refund to be processed by the chain'))
-      .catch(err => toastr.error(err));
-  });
-};
-
-const watchEndLotteryButton = contract => {
-  watchButtonClick('#end-lottery-button', e => {
-    promise(contract.endLottery)
-      .then(() => toastr.success('Ending of lottery to be processed by chain'))
-      .catch(err => toastr.error(err));
-  });
-};
-
-const setNetwork = () => {
-  const mapping = {1: 'Main', 2: 'Deprecated Morden', 3: 'Ropsten'};
-  
-  promise(window.web3.version.getNetwork)
-    .then(netId => mapping[netId] || 'Sandbox')
-    .then(network => $('#network').html(network));
-};
-
-/**
- * Function that is executed when the DOM is fully loaded
- */
-$(() => {
-    const contract = window.web3.eth.contract(CONTRACT_ABI).at(CONTRACT_ADDRESS);
-    
-    refreshLotteryState(contract);
-    
-    watchContractEvents(contract);
-    
-    watchStartLotteryButton(contract);
-    watchBuyTicketButton(contract);
-    watchEndLotteryButton(contract);
-    watchRefundButton(contract);
-    
-    setNetwork();
-    
-    $('#lotPrice').val(1000);
-    $('#maxParticipants').val(9);
-    $('#endDateStart').val(moment().add(5, 'm').format(DATE_FORMAT));
-    $('#endDateClose').val(moment().add(10, 'm').format(DATE_FORMAT));
-});
+        var bytecode = '6060604052610282806100126000396000f360606040526000357c0100000000000000000000000000000000000000000000000000000000900480634ed3885e146100445780636d4ce63c1461009a57610042565b005b6100986004808035906020019082018035906020019191908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050909091905050610115565b005b6100a760048050506101c6565b60405180806020018281038252838181518152602001915080519060200190808383829060006004602084601f0104600f02600301f150905090810190601f1680156101075780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b8060006000509080519060200190828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061016457805160ff1916838001178555610195565b82800160010185558215610195579182015b82811115610194578251826000505591602001919060010190610176565b5b5090506101c091906101a2565b808211156101bc57600081815060009055506001016101a2565b5090565b50505b50565b602060405190810160405280600081526020015060006000508054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156102735780601f1061024857610100808354040283529160200191610273565b820191906000526020600020905b81548152906001019060200180831161025657829003601f168201915b5050505050905061027f565b9056';
+        var deployContractObject = {
+            from: window.web3.eth.defaultAccount,
+            gas: 300000,
+            data: bytecode
+        };
+        var sendDataObject = {
+            from: window.web3.eth.defaultAccount,
+            gas: 300000,
+        };
+        var NotSoSimpleStorageContractObject = window.web3.eth.contract(CONTRACT_ABI);
+        // Globals... who cares...
+        window.ipfs = ipfs;
+        window.deployContractObject = deployContractObject;
+        window.NotSoSimpleStorageContractObject = NotSoSimpleStorageContractObject;
+        window.ipfsDataHost = "http://" + ipfsHost + ':' + ipfsWebPort + "/ipfs";
+        // Functions
+        function getBalance() {
+            window.web3.eth.getBalance(window.web3.eth.defaultAccount, function(err, balance){
+                console.log(parseFloat(window.web3.fromWei(balance, 'ether')));
+            });
+        }
+        function deployContract() {
+            window.currentIPFSHash = null;
+            window.currentData = null;
+            if (window.contractInstance) {
+                console.error('Contract already deployed. Identifier: ', window.contractAddress);
+                return false;
+            }
+            window.NotSoSimpleStorageContractObject.new(window.deployContractObject, function(err, contract) {
+                if (err) {
+                    console.error('Error deploying contract: ', err);
+                } else if (contract.address) {
+                    var contractAddress = contract.address;
+                    window.contractAddress = contractAddress;
+                    window.contractInstance = window.NotSoSimpleStorageContractObject.at(contractAddress);
+                    console.log('Contract deployed at address ', contractAddress);
+                } else if (contract.transactionHash) {
+                    console.log("Waiting for contract to be deployed... Contract's transaction hash: ", contract.transactionHash);  
+                } else {
+                    console.error('Unknown error deploying contract');
+                }
+            });
+        }
+        function sendTransaction(data) {
+            if (!window.contractInstance) {
+                console.error('Make sure you deploy your contract first');
+                return;
+            }
+            if (window.currentData == data) {
+                console.error("Why would you override your contract's data with the same data, you dummy?");
+                return;
+            }
+            window.contractInstance.set.sendTransaction(data, window.sendDataObject, function(err, result){
+                if (err) {
+                    console.error('Error sending data: ', err);
+                } else {
+                    window.currentData = data;
+                    console.log('Successfully sent data. Transaction hash: ', result);
+                }
+            });
+        }
+        function getData() {
+            if (!window.contractInstance) {
+                console.error('Make sure you deploy your contract first');
+                return;
+            }
+            window.contractInstance.get.call(function(err, result){
+                if (err) {
+                    console.error('Error getting data: ', err);
+                } else if (result) {
+                    if (window.currentIPFSHash == result) {
+                        console.log("New data hasn't been mined yet. This is your current data: ", result);
+                        return;
+                    }
+                    window.currentIPFSHash = result
+                    var imageURL = window.ipfsDataHost + "/" + result;
+                    console.log('File: ', result);
+                    console.log(imageURL);
+                } else {
+                    console.error('No data. Transaction not mined yet?');
+                }
+            });
+        }
+        function addFile(url) {
+            window.ipfs.add(url, function(err, result) {
+                if (err) {
+                    console.error('Error sending file: ', err);
+                    return null;
+                } else if (result && result[0] && result[0].Hash) {
+                    var imageURL = window.ipfsDataHost + "/" + result[0].Hash;
+                    console.log('File: ', result[0].Hash);
+                    console.log(imageURL);
+                } else {
+                    console.error('No file for you...');
+                    return null;
+                }
+            });
+        }
