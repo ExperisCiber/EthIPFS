@@ -30,6 +30,7 @@ var config = {
   },
   devServer: {
     open: true,
+    disableHostCheck: true,
     contentBase: path.resolve(__dirname, './src')
   },
   devtool: 'eval-source-map',

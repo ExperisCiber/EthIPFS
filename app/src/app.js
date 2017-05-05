@@ -5,8 +5,6 @@ import {CONTRACT_ABI, BLOCKCHAIN_URL, SANDBOX_CONTRACT_ADDRESS, ROPSTEN_CONTRACT
 
 // Specific required libraries (should also be in package.json)
 const Web3 = require('web3');
-const moment = require('moment');
-const toastr = require('toastr');
 const DATE_FORMAT = 'DD-MM-YYYY HH:mm';
 const USE_SANDBOX = false;
 
@@ -29,7 +27,7 @@ if (!USE_SANDBOX && typeof web3 !== 'undefined') { // Injection by Metamask/Mist
             web3Host    = 'http://xepa.local',
             web3Port    = '8545';
         // IPFS
-        var ipfs = window.IpfsApi(ipfsHost, ipfsAPIPort)
+        var ipfs = window.IpfsApi(ipfsHost, ipfsAPIPort);
         ipfs.swarm.peers(function(err, response) {
             if (err) {
                 console.error(err);
@@ -138,3 +136,33 @@ if (!USE_SANDBOX && typeof web3 !== 'undefined') { // Injection by Metamask/Mist
                 }
             });
         }
+        
+  /**
+ * Utility method that takes at least one parameter: a function `x`.
+ * The last argument of function `x` should be a callback in the form (error, result)
+ * Every next argument you give `promise` will be given as argument to function `x`
+ */
+const promise = (fn, ...args) => {
+  return new Promise((resolve, reject) => 
+    fn.apply(this, args.concat([(err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    }]))
+  );
+};
+        
+    const setNetwork = () => {
+  const mapping = {1: 'Main', 2: 'Deprecated Morden', 3: 'Ropsten'};
+  
+  promise(window.web3.version.getNetwork)
+    .then(netId => mapping[netId] || 'Sandbox')
+    .then(network => $('#network').html(network));
+};
+
+$(() => {
+    const contract = window.web3.eth.contract(CONTRACT_ABI).at(CONTRACT_ADDRESS);
+        setNetwork();
+});
