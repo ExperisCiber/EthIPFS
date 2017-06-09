@@ -4,19 +4,139 @@
     <meta charset="utf-8">
     <title>Ciber IP Mangement Dapp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" crossorigin="anonymous"/>
 </head>
 <body>
-      Using network: <span id="network"></span>
 
-    <p>Open the JavaScript console to use the application.</p>
-    <ul>Usage:
-        <li><code>deployContract()<code>: deploy Ethereum contract</li>
-        <li><code>addFile(URL)<code>: save a file to IPFS</li>
-        <li><code>sendTransaction(IPFSHash)<code>: send a transaction to the Ethereum contract</li>
-        <li><code>getData()<code>: get the latest value (IPFS hash) stored in the Ethereum contract</li>
-    </ul>
-    
+	<nav class="navbar navbar-inverse navbar-static-top">
+		<div class="container">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="#">Ciber off-chain file storage</a>
+			</div>
+		</div>
+	</nav>
+	
+	<div class="container">
+		<div class="alert alert-info" role="alert">
+		  Using network: <span id="network"></span>
+		  <br/>
+		  Using account: <span id="account"></span> (Balance: <span id="balance"></span>)
+		  <br/>
+		  Connected to <span id="peers"></span> IPFS peers <br/>
+		</div>
+		
+		
+		<ul class="nav nav-tabs">
+			<li role="presentation" class="active"><a href="#creator" data-toggle="tab">Creator</a></li>
+			<li role="presentation"><a href="#customer" data-toggle="tab">Customer</a></li>
+		</ul>
+		
+		<div class="tab-content clearfix">
+			<div class="tab-pane active" id="creator">
+				<div class="alert alert-warning" role="alert">
+					<form class="form-horizontal">
+						<div class="form-group">
+							<label for="receiver1" class="col-sm-2 control-label">
+								<input class="btn btn-primary" id="deploy-contract" type="button" value="Deploy Contract"/><br/>
+								<span id="contract"></span> <br/>
+							</label>
+						</div>
+					</form>
+				</div>
+				<div class="alert alert-warning" role="alert">
+					<form class="form-horizontal">
+					  <div class="form-group">
+						<label for="receiver1" class="col-sm-2 control-label">First receiver</label>
+						<div class="col-sm-10">
+						  <input id="receiver1" type="text" class="form-control"  placeholder="Address of receiver 1"/>
+						  <input id="percentage1" type="text" class="form-control" placeholder="percentage"/>
+						</div>
+					  </div>
+					  <div class="form-group">
+						<label for="receiver2" class="col-sm-2 control-label">Second receiver</label>
+						<div class="col-sm-10">
+						  <input id="receiver2" type="text" class="form-control"  placeholder="Address of receiver 2"/>
+						  <input id="percentage2" type="text" class="form-control" placeholder="percentage"/>
+						</div>
+					  </div>
+					  <div class="form-group">
+						<label for="contentPrice" class="col-sm-2 control-label">Content price</label>
+						<div class="col-sm-10">
+						  <input id="contentPrice" type="text" placeholder="Content price in Ether" class="form-control"/>
+						</div>
+					  </div>
+					  <div class="form-group">
+						<label for="get-file" class="col-sm-2 control-label">Content</label>
+						<div class="col-sm-10">
+							<form enctype="multipart/form-data">
+								<input id="get-file" type="file"  name="files[]" size="30">
+							</form>
+							<span id="hash"></span>
+						</div>
+					  </div>
+					  
+					  <div class="form-group">
+						<label for="set-data" class="col-sm-2 control-label"></label>
+						<div class="col-sm-20">
+							<input id ="set-data" type="button" class="btn btn-primary" value="Set Data"/>
+							<span id="transaction"></span>
+						</div>
+					  </div>
+					  
+					</form>
+				</div>
+			</div>
+		  
+			<div class="tab-pane" id="customer">
+				<div class="alert alert-warning" role="alert">
+					<span id="contract"></span> <br/>
+				</div>
+				<div class="alert alert-warning" role="alert">
+					<form class="form-horizontal">
+						<div class="form-group">
+							<label for="read-contract" class="col-sm-2 control-label">
+								<input id="read-contract" type="button" class="btn btn-primary" value="Read Contract"/>
+							</label>
+						</div>
+						<div class="form-group">
+							<label for="contractReceiver1" class="col-sm-2 control-label">First receiver</label>
+							<span id="contractReceiver1"></span> <span id="contractPercentage1"></span>
+						</div>						
+						<div class="form-group">
+							<label for="contractReceiver2" class="col-sm-2 control-label">Second receiver</label>
+							<span id="contractReceiver2"></span> <span id="contractPercentage2"></span>
+						</div>						
+						<div class="form-group">
+							<label for="contractContentPrice" class="col-sm-2 control-label">Content price</label>
+							<span id="contractContentPrice"></span>
+						</div>
+					</form>
+				</div>
+				<div class="alert alert-warning" role="alert">
+					<form class="form-horizontal">
+						<div class="form-group">
+							<label for="read-contract" class="col-sm-2 control-label">
+								<input id="get-content" type="button" class="btn btn-primary" value="Get content"/>
+							</label>
+							<span id="content-transaction"></span>
+						</div>
+						<div class="form-group">
+							<label for="ipfs-hash" class="col-sm-2 control-label">File hash</label>
+							<span id="ipfs-hash"></span>
+						</div>
+						<div class="form-group">
+							<label for="ipfs-link" class="col-sm-2 control-label">File link</label>
+							<span id="ipfs-link"></span>
+						</div>
+					</form>
+				</div>
+			</div>
+      </div>
+		
+		
+	</div>
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <script src="/assets/main.bundle.js"></script>

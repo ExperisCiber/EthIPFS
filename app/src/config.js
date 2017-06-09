@@ -1,46 +1,5 @@
 const SANDBOX_ID = 'eee1d011e7';
 export const BLOCKCHAIN_URL = 'https://mhulshof.by.ether.camp:8555/sandbox/' + SANDBOX_ID;
 export const SANDBOX_CONTRACT_ADDRESS = '';
-export const ROPSTEN_CONTRACT_ADDRESS = '';
-
-export const CONTRACT_ABI = [
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "storedData",
-    "outputs": [
-      {
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "payable": false,
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "x",
-        "type": "string"
-      }
-    ],
-    "name": "set",
-    "outputs": [],
-    "payable": false,
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "get",
-    "outputs": [
-      {
-        "name": "x",
-        "type": "string"
-      }
-    ],
-    "payable": false,
-    "type": "function"
-  }
-];
+export const ROPSTEN_CONTRACT_ADDRESS = '0xa7cCfb968c26EC9E0e5e7163be44Fcd094A91F07';
+export const CONTRACT_ABI = [{"constant":true,"inputs":[],"name":"storedReceiver2","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"hash","type":"string"},{"name":"receiver1","type":"address"},{"name":"percentage1","type":"uint256"},{"name":"receiver2","type":"address"},{"name":"percentage2","type":"uint256"},{"name":"contentPrice","type":"uint256"}],"name":"set","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"get","outputs":[],"payable":true,"type":"function"},{"constant":true,"inputs":[],"name":"storedContentPrice","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"storedReceiver1","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"storedPercentage1","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"storedPercentage2","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"},{"anonymous":false,"inputs":[],"name":"setData","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"storedHash","type":"string"}],"name":"contentBought","type":"event"}];
